@@ -24,8 +24,8 @@ async function run() {
   try {
     const database = client.db('soloSphere');
     const jobsCollection = database.collection('jobs');
-    
-    app.post('/add-job', async(req, res)=>{
+
+    app.post('/add-job', async (req, res) => {
       const jobData = req.body;
       const result = await jobsCollection.insertOne(jobData);
       // console.log(jobData)
@@ -33,12 +33,20 @@ async function run() {
     })
 
 
-    app.get('/jobs', async(req, res)=>{
-      const result  = await jobsCollection.find().toArray()
+    app.get('/jobs', async (req, res) => {
+      const result = await jobsCollection.find().toArray()
       res.send(result);
     });
 
-    
+    // get all jobs posted by a specific user 
+    app.get('/jobs/:email', async (req, res) => {
+      const email = req.params.email;
+      const query = { 'buyer.email': email }
+      const result = await jobsCollection.find(query).toArray();
+      res.send(result); 
+    })
+
+
   } finally {
     // Ensures that the client will close when you finish/error
   }
