@@ -24,6 +24,7 @@ async function run() {
   try {
     const database = client.db('soloSphere');
     const jobsCollection = database.collection('jobs');
+    const bidsCollection = database.collection('bids');
 
     app.post('/add-job', async (req, res) => {
       const jobData = req.body;
@@ -60,6 +61,42 @@ async function run() {
       const query = { _id: new ObjectId(id) };
       const result = await jobsCollection.findOne(query);
       res.send(result);
+    })
+
+    app.put('/update-job/:id', async (req, res) => {
+      const jobData = req.body;
+      const id = req.params.id
+      const query = { _id: new ObjectId(id) }
+      const updatedData = {
+        $set: jobData,
+      }
+      const options = { upsert: true }
+      const result = await jobsCollection.updateOne(query, updatedData, options);
+      res.send(result);
+    })
+
+    // bidData save in db 
+    app.post('/add-bids', async (req, res) => {
+      const bidData = req.body;
+      const query = { email: bidData.email, jobId: bidData.jobId }
+      const alreadyExist = await bidsCollection.findOne(query)
+      // console.log('alreadyExist',alreadyExist)
+      if (alreadyExist) {
+        return res.status(400).send('You have already placed bid for this job')
+      }
+
+
+      const result = await bidsCollection.insertOne(bidData);
+      // console.log(bidData)
+
+      const filter = { _id: new ObjectId(bidData.jobId) }
+      const update = {
+        $inc: { bid_count: 1 },
+      }
+      const updateBidCount = await jobsCollection.updateOne(filter, update);
+
+
+      res.send(result)
     })
 
 
